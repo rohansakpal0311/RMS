@@ -31,12 +31,28 @@ const App: React.FC = () => {
   const [branches, setBranches] = useState<Branch[]>(INITIAL_BRANCHES);
   const [tableCarts, setTableCarts] = useState<Record<string, CartItem[]>>({});
   const [reservations, setReservations] = useState<Reservation[]>([
-    { id: 'res1', customerName: 'John Doe', partySize: 4, tableId: 't4', time: '19:30', status: 'PENDING' }
+    { id: 'res1', customerName: 'Rahul Sharma', partySize: 4, tableId: 't4', time: '19:30', status: 'PENDING' }
   ]);
   const [selectedTableIdForPOS, setSelectedTableIdForPOS] = useState<string | null>(null);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [notifications, setNotifications] = useState<{id: string, message: string, type: 'info' | 'success'}[]>([]);
   const [showAddBranchModal, setShowAddBranchModal] = useState(false);
+  const [currentTime, setCurrentTime] = useState<string>('');
+
+  // IST Real-time Clock
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const istTime = new Intl.DateTimeFormat('en-IN', {
+        timeZone: 'Asia/Kolkata',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true,
+      }).format(new Date());
+      setCurrentTime(istTime);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     const savedOrders = localStorage.getItem('zenith_pro_orders');
@@ -63,6 +79,18 @@ const App: React.FC = () => {
     localStorage.setItem('zenith_pro_branches', JSON.stringify(branches));
   }, [branches]);
 
+  // Global click listener to remove notifications when any button is clicked
+  useEffect(() => {
+    const handleGlobalClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.closest('button')) {
+        setNotifications([]);
+      }
+    };
+    document.addEventListener('click', handleGlobalClick);
+    return () => document.removeEventListener('click', handleGlobalClick);
+  }, []);
+
   const addNotification = useCallback((message: string, type: 'info' | 'success' = 'info') => {
     const id = Math.random().toString(36).substr(2, 9);
     setNotifications(prev => [{ id, message, type }, ...prev]);
@@ -86,6 +114,18 @@ const App: React.FC = () => {
     };
     setBranches(prev => [...prev, newBranch]);
     addNotification(`New branch ${name} added to cluster`, 'success');
+  };
+
+  const handleDeleteBranch = (branchId: string) => {
+    const branchToDelete = branches.find(b => b.id === branchId);
+    if (branchToDelete?.active) {
+      addNotification("Cannot delete the active branch node.", "info");
+      return;
+    }
+    if (confirm(`Are you sure you want to decommission the "${branchToDelete?.name}" branch?`)) {
+      setBranches(prev => prev.filter(b => b.id !== branchId));
+      addNotification(`Branch "${branchToDelete?.name}" has been removed.`, "success");
+    }
   };
 
   const addOrder = (newOrder: Order) => {
@@ -119,8 +159,31 @@ const App: React.FC = () => {
     addNotification(`Table reservation for ${res.customerName} confirmed`, 'success');
   };
 
+  const updateReservation = (res: Reservation) => {
+    setReservations(prev => {
+      const oldRes = prev.find(r => r.id === res.id);
+      if (oldRes && oldRes.tableId !== res.tableId) {
+        // Change table status if table changed
+        updateTableStatus(oldRes.tableId, 'AVAILABLE');
+        updateTableStatus(res.tableId, 'RESERVED');
+      }
+      return prev.map(r => r.id === res.id ? res : r);
+    });
+    addNotification(`Reservation for ${res.customerName} updated`, 'info');
+  };
+
+  const deleteReservation = (id: string) => {
+    const res = reservations.find(r => r.id === id);
+    if (res) {
+      updateTableStatus(res.tableId, 'AVAILABLE');
+      setReservations(prev => prev.filter(r => r.id !== id));
+      addNotification(`Reservation for ${res.customerName} cancelled`, 'info');
+    }
+  };
+
   const handleAddItem = (item: MenuItem) => {
     setMenu(prev => [item, ...prev]);
+    addNotification(`Asset "${item.name}" registered to menu catalogue`, 'success');
   };
 
   const handleLogin = (user: User) => {
@@ -197,6 +260,8 @@ const App: React.FC = () => {
             updateTableStatus={updateTableStatus} 
             reservations={reservations} 
             onAddReservation={addReservation} 
+            onUpdateReservation={updateReservation}
+            onDeleteReservation={deleteReservation}
             onPlaceOrder={handleTablePlaceOrder}
             menu={menu}
             tableCarts={tableCarts}
@@ -232,15 +297,27 @@ const App: React.FC = () => {
               {branches.map(branch => (
                 <div key={branch.id} className={`p-8 rounded-[3rem] border transition-all duration-500 relative overflow-hidden group ${branch.active ? 'bg-[#0f111a] text-white border-slate-800 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.3)]' : 'bg-white text-slate-900 border-slate-100 shadow-xl shadow-slate-200/50 hover:-translate-y-2'}`}>
                   {branch.active && <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-3xl translate-x-10 -translate-y-10"></div>}
+                  
                   <div className="flex justify-between items-start mb-8 relative z-10">
                     <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-transform group-hover:rotate-6 ${branch.active ? 'bg-indigo-600 shadow-lg shadow-indigo-500/30' : 'bg-slate-50 text-slate-400 border border-slate-100'}`}>
                       <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1" /></svg>
                     </div>
-                    {branch.active ? (
-                      <span className="bg-emerald-500 text-black text-[9px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest shadow-lg shadow-emerald-500/20">Active Node</span>
-                    ) : (
-                      <div className="w-3 h-3 rounded-full bg-slate-200"></div>
-                    )}
+                    <div className="flex gap-2">
+                      {!branch.active && (
+                        <button 
+                          onClick={() => handleDeleteBranch(branch.id)}
+                          className="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-500 flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all shadow-sm"
+                          title="Delete Branch"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                        </button>
+                      )}
+                      {branch.active ? (
+                        <span className="bg-emerald-500 text-black text-[9px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest shadow-lg shadow-emerald-500/20">Active Node</span>
+                      ) : (
+                        <div className="w-3 h-3 rounded-full bg-slate-200"></div>
+                      )}
+                    </div>
                   </div>
                   <h3 className="text-2xl font-black mb-1 italic tracking-tight">{branch.name}</h3>
                   <p className={`text-xs font-bold uppercase tracking-widest mb-10 ${branch.active ? 'text-slate-500' : 'text-slate-400'}`}>{branch.location}</p>
@@ -334,12 +411,20 @@ const App: React.FC = () => {
               {activeRoute === AppRoute.TABLES ? 'Floor Matrix' : activeRoute.replace('_', ' ')}
             </h1>
             <div className="h-4 w-[1px] bg-slate-200"></div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-4">
               <div className="relative flex items-center gap-2 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-100">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                 <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">Live Sync Active</span>
               </div>
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">v2.1 Pro Engine</span>
+              
+              {/* Real-time IST Display */}
+              <div className="flex items-center gap-2 bg-slate-900 px-4 py-1.5 rounded-xl border border-slate-800 shadow-lg group">
+                <svg className="w-4 h-4 text-indigo-400 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-black text-white uppercase tracking-widest tabular-nums">{currentTime}</span>
+                  <span className="text-[7px] font-black text-slate-500 uppercase tracking-widest -mt-0.5">Asia/Kolkata</span>
+                </div>
+              </div>
             </div>
           </div>
           
@@ -351,7 +436,7 @@ const App: React.FC = () => {
                   <span className="text-[9px] font-black text-black">P</span>
                 </div>
               </div>
-              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em]">{currentUser.role} • 7th Ave Branch</p>
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em]">{currentUser.role} • {branches.find(b => b.active)?.name}</p>
             </div>
             <div 
               onClick={() => setActiveRoute(AppRoute.PROFILE)}

@@ -33,7 +33,6 @@ const Auth: React.FC<AuthProps> = ({ onAuthenticated }) => {
   const [error, setError] = useState<string | null>(null);
   const [authenticatedUser, setAuthenticatedUser] = useState<User | null>(null);
   
-  const welcomeAudioRef = useRef<HTMLAudioElement | null>(null);
   const [registeredStores, setRegisteredStores] = useState<RegisteredStore[]>([]);
 
   useEffect(() => {
@@ -81,20 +80,9 @@ const Auth: React.FC<AuthProps> = ({ onAuthenticated }) => {
 
   useEffect(() => {
     if (isSuccess && authenticatedUser) {
-      // Play stylish welcome music
-      welcomeAudioRef.current = new Audio('https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3');
-      welcomeAudioRef.current.volume = 0.4;
-      welcomeAudioRef.current.play().catch(e => console.debug("Audio play blocked."));
-
-      const timer = setTimeout(() => onAuthenticated(authenticatedUser), 4000);
-      
-      return () => {
-        clearTimeout(timer);
-        if (welcomeAudioRef.current) {
-          welcomeAudioRef.current.pause();
-          welcomeAudioRef.current = null;
-        }
-      };
+      // Immediate transition to app after a brief 1-second visual confirmation
+      const timer = setTimeout(() => onAuthenticated(authenticatedUser), 1000);
+      return () => clearTimeout(timer);
     }
   }, [isSuccess, authenticatedUser, onAuthenticated]);
 
@@ -140,7 +128,7 @@ const Auth: React.FC<AuthProps> = ({ onAuthenticated }) => {
         setError('Access Denied: Invalid Username or Passcode.');
       }
       setIsLoading(false);
-    }, 1200);
+    }, 8000); // 800ms for a snappy load feel
   };
 
   const handleSignupNext = () => {
@@ -266,28 +254,20 @@ const Auth: React.FC<AuthProps> = ({ onAuthenticated }) => {
 
   if (isSuccess && authenticatedUser) {
     return (
-      <div className="h-screen w-full flex items-center justify-center bg-[#020205] relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_#1a1b2e_0%,_transparent_70%)] opacity-60"></div>
-        
-        <div className="z-10 animate-in fade-in zoom-in duration-1000 flex flex-row items-center gap-8 bg-white/5 p-12 rounded-[4rem] border border-white/10 backdrop-blur-3xl shadow-[0_0_80px_rgba(0,0,0,0.5)]">
-          <div className="relative shrink-0">
-            <div className="w-20 h-20 rounded-full bg-white p-0.5 shadow-[0_0_40px_rgba(99,102,241,0.4)] overflow-hidden">
-              <img src={authenticatedUser.avatar} alt={authenticatedUser.name} className="w-full h-full object-cover" />
-            </div>
-            <div className="absolute -inset-2 border border-indigo-500/20 rounded-full animate-ping pointer-events-none"></div>
+      <div className="h-screen w-full flex items-center justify-center bg-[#05060b]">
+        <div className="flex flex-row items-center gap-8 animate-in fade-in zoom-in duration-300">
+          <div className="w-24 h-24 rounded-[2rem] bg-white p-1 shadow-2xl overflow-hidden">
+            <img src={authenticatedUser.avatar} alt={authenticatedUser.name} className="w-full h-full object-cover" />
           </div>
-
-          <div className="flex flex-col">
-            <p className="text-indigo-400 text-[9px] font-black uppercase tracking-[0.5em] mb-1.5 italic opacity-80">Access Granted</p>
-            <h2 className="text-white text-[13px] uppercase tracking-[0.4em] whitespace-nowrap drop-shadow-2xl" 
-                style={{ fontFamily: "'Georgia', 'Times New Roman', serif", fontStyle: 'italic', fontWeight: 700 }}>
-              Welcome back, {authenticatedUser.name}
+          <div className="space-y-1">
+            <p className="text-indigo-500 text-[10px] font-black uppercase tracking-widest">Authenticated</p>
+            <h2 
+              className="text-2xl text-white uppercase tracking-[0.3em] font-black italic" 
+              style={{ fontFamily: "'Georgia', serif" }}
+            >
+              {authenticatedUser.name.toUpperCase()}
             </h2>
           </div>
-        </div>
-
-        <div className="absolute bottom-24 w-48 h-[1px] bg-white/5 overflow-hidden">
-          <div className="h-full bg-indigo-500 w-full animate-[slide-in-from-left_3.5s_ease-in-out_infinite]"></div>
         </div>
       </div>
     );
@@ -302,11 +282,13 @@ const Auth: React.FC<AuthProps> = ({ onAuthenticated }) => {
         <div className="absolute inset-0 bg-gradient-to-tr from-[#05060b] via-[#05060b]/80 to-transparent pointer-events-none"></div>
       </div>
 
-      <style>{`@keyframes ken-burns { 0% { transform: scale(1); } 100% { transform: scale(1.15) translate(1%, 1%); } }`}</style>
+      <style>{`
+        @keyframes ken-burns { 0% { transform: scale(1); } 100% { transform: scale(1.15) translate(1%, 1%); } }
+      `}</style>
 
       {error && (
         <div className="fixed top-12 left-1/2 -translate-x-1/2 z-[100] animate-in slide-in-from-top-4 fade-in duration-500">
-           <div className="bg-rose-600 text-white px-8 py-4 rounded-3xl shadow-2xl border border-rose-400/30 flex items-center gap-4 animate-bounce">
+           <div className="bg-rose-600 text-white px-8 py-4 rounded-3xl shadow-2xl border border-rose-400/30 flex items-center gap-4">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
               <span className="font-black text-xs uppercase tracking-widest">{error}</span>
            </div>

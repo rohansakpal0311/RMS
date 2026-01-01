@@ -144,8 +144,18 @@ const Settings: React.FC = () => {
           </div>
           <nav className="flex-1 p-4 space-y-1">
             {tabs.map((tab) => (
-              <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-300 ${activeTab === tab.id ? 'bg-white shadow-md text-slate-900 border border-slate-200' : 'text-slate-500 hover:bg-white/50'}`}>
-                <div className={`${activeTab === tab.id ? tab.color : 'text-slate-400'}`}>{tab.icon}</div>
+              <button 
+                key={tab.id} 
+                onMouseEnter={() => setActiveTab(tab.id)}
+                className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-300 ${
+                  activeTab === tab.id 
+                    ? 'bg-white shadow-md text-slate-900 border border-slate-200' 
+                    : 'text-slate-500 hover:bg-white/50 hover:translate-x-1'
+                }`}
+              >
+                <div className={`${activeTab === tab.id ? tab.color : 'text-slate-400'} transition-transform group-hover:scale-110`}>
+                  {tab.icon}
+                </div>
                 <span className="font-black text-[10px] uppercase tracking-widest">{tab.label}</span>
               </button>
             ))}

@@ -7,6 +7,8 @@ interface TableManagerProps {
   updateTableStatus: (id: string, status: TableStatus) => void;
   reservations: Reservation[];
   onAddReservation: (res: Reservation) => void;
+  onUpdateReservation: (res: Reservation) => void;
+  onDeleteReservation: (id: string) => void;
   onPlaceOrder: (tableId: string) => void;
   menu: MenuItem[];
   tableCarts: Record<string, CartItem[]>;
@@ -14,13 +16,14 @@ interface TableManagerProps {
 }
 
 const TableManager: React.FC<TableManagerProps> = ({ 
-  tables, updateTableStatus, reservations, onAddReservation, onPlaceOrder, 
+  tables, updateTableStatus, reservations, onAddReservation, onUpdateReservation, onDeleteReservation, onPlaceOrder, 
   menu, tableCarts, onUpdateTableCart 
 }) => {
   const [resForm, setResForm] = useState({ name: '', pax: 2, tableId: '', time: '19:00' });
   const [selectedSection, setSelectedSection] = useState<TableSection | 'All'>('All');
   const [quickAddTableId, setQuickAddTableId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [editingResId, setEditingResId] = useState<string | null>(null);
 
   const getStatusInfo = (status: TableStatus) => {
     switch (status) {
@@ -42,15 +45,38 @@ const TableManager: React.FC<TableManagerProps> = ({
   const handleResSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!resForm.name || !resForm.tableId) return;
-    onAddReservation({
-      id: Math.random().toString(36).substr(2, 9),
-      customerName: resForm.name,
-      partySize: resForm.pax,
-      tableId: resForm.tableId,
-      time: resForm.time,
-      status: 'PENDING'
-    });
+
+    if (editingResId) {
+      onUpdateReservation({
+        id: editingResId,
+        customerName: resForm.name,
+        partySize: resForm.pax,
+        tableId: resForm.tableId,
+        time: resForm.time,
+        status: 'PENDING'
+      });
+      setEditingResId(null);
+    } else {
+      onAddReservation({
+        id: Math.random().toString(36).substr(2, 9),
+        customerName: resForm.name,
+        partySize: resForm.pax,
+        tableId: resForm.tableId,
+        time: resForm.time,
+        status: 'PENDING'
+      });
+    }
     setResForm({ name: '', pax: 2, tableId: '', time: '19:00' });
+  };
+
+  const startEditReservation = (res: Reservation) => {
+    setEditingResId(res.id);
+    setResForm({
+      name: res.customerName,
+      pax: res.partySize,
+      tableId: res.tableId,
+      time: res.time
+    });
   };
 
   const handleQuickAdd = (tableId: string, item: MenuItem) => {
@@ -174,7 +200,7 @@ const TableManager: React.FC<TableManagerProps> = ({
             <div className="absolute -top-10 -right-10 w-32 h-32 bg-indigo-600/10 rounded-full blur-3xl"></div>
             <h3 className="text-xl font-black uppercase tracking-tight mb-8 italic flex items-center gap-3">
               <svg className="w-6 h-6 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-              Table Booking
+              {editingResId ? 'Modify Booking' : 'Table Booking'}
             </h3>
             <form onSubmit={handleResSubmit} className="space-y-5">
               <div>
@@ -192,15 +218,28 @@ const TableManager: React.FC<TableManagerProps> = ({
                 </div>
               </div>
               <div>
-                <label className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] block mb-2">Available Tables</label>
+                <label className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] block mb-2">Assign Node</label>
                 <select value={resForm.tableId} onChange={e => setResForm({...resForm, tableId: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 outline-none text-sm font-medium text-white appearance-none">
                   <option value="" className="text-slate-900">Choose Table...</option>
-                  {tables.filter(t => t.status === 'AVAILABLE').map(t => (
+                  {tables.filter(t => t.status === 'AVAILABLE' || t.id === reservations.find(r => r.id === editingResId)?.tableId).map(t => (
                     <option key={t.id} value={t.id} className="text-slate-900">T#{t.number} ({t.section})</option>
                   ))}
                 </select>
               </div>
-              <button className="w-full bg-indigo-600 hover:bg-indigo-500 py-5 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-xl shadow-indigo-600/20 active:scale-95">Confirm Reservation</button>
+              <div className="flex gap-3">
+                <button type="submit" className="flex-1 bg-indigo-600 hover:bg-indigo-500 py-5 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-xl shadow-indigo-600/20 active:scale-95">
+                  {editingResId ? 'Update Record' : 'Confirm Reservation'}
+                </button>
+                {editingResId && (
+                  <button 
+                    type="button" 
+                    onClick={() => { setEditingResId(null); setResForm({ name: '', pax: 2, tableId: '', time: '19:00' }); }}
+                    className="bg-white/10 hover:bg-white/20 px-6 rounded-2xl text-[9px] font-black uppercase tracking-widest transition-all"
+                  >
+                    Cancel
+                  </button>
+                )}
+              </div>
             </form>
           </div>
 
@@ -214,9 +253,12 @@ const TableManager: React.FC<TableManagerProps> = ({
              <div className="space-y-4 overflow-y-auto custom-scrollbar flex-1 pr-2">
                 {reservations.map(res => {
                   const table = tables.find(t => t.id === res.tableId);
+                  const isBeingEdited = editingResId === res.id;
                   return (
-                    <div key={res.id} className="flex items-center gap-4 p-5 rounded-[1.5rem] bg-slate-50 border border-slate-100 group hover:border-indigo-200 transition-all">
-                       <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-lg font-black text-indigo-600 shadow-sm group-hover:scale-110 transition-transform">{res.time.split(':')[0]}<span className="text-[10px] opacity-30">h</span></div>
+                    <div key={res.id} className={`flex items-center gap-4 p-5 rounded-[1.5rem] border transition-all group ${isBeingEdited ? 'bg-indigo-50 border-indigo-200' : 'bg-slate-50 border-slate-100 hover:border-indigo-200'}`}>
+                       <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-lg font-black shadow-sm group-hover:scale-110 transition-transform ${isBeingEdited ? 'bg-indigo-600 text-white' : 'bg-white text-indigo-600'}`}>
+                          {res.time.split(':')[0]}<span className="text-[10px] opacity-30">h</span>
+                       </div>
                        <div className="flex-1 min-w-0">
                           <p className="text-sm font-black text-slate-800 truncate tracking-tight">{res.customerName}</p>
                           <div className="flex items-center gap-3 mt-0.5">
@@ -225,9 +267,30 @@ const TableManager: React.FC<TableManagerProps> = ({
                             <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{res.partySize} PAX</span>
                           </div>
                        </div>
+                       <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button 
+                            onClick={() => startEditReservation(res)}
+                            className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:border-indigo-200 transition-all shadow-sm"
+                            title="Edit Booking"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                          </button>
+                          <button 
+                            onClick={() => onDeleteReservation(res.id)}
+                            className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-rose-600 hover:border-rose-200 transition-all shadow-sm"
+                            title="Cancel Booking"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                          </button>
+                       </div>
                     </div>
                   );
                 })}
+                {reservations.length === 0 && (
+                   <div className="py-20 text-center opacity-20">
+                      <p className="text-[10px] font-black uppercase tracking-widest">No Active Bookings</p>
+                   </div>
+                )}
              </div>
           </div>
         </div>

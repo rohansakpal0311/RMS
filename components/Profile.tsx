@@ -8,10 +8,10 @@ interface ProfileProps {
   onSignOut: () => void;
 }
 
-const GENDER_CATEGORIES = [
+const IDENTITY_MATRICES = [
   {
-    id: 'female',
-    label: 'Ladies',
+    id: 'matrix_alpha',
+    label: 'Collection Alpha',
     avatars: [
       'https://api.dicebear.com/7.x/avataaars/svg?seed=Anya&mouth=smile',
       'https://api.dicebear.com/7.x/avataaars/svg?seed=Bella&mouth=smile',
@@ -20,8 +20,8 @@ const GENDER_CATEGORIES = [
     ]
   },
   {
-    id: 'male',
-    label: 'Gentlemen',
+    id: 'matrix_beta',
+    label: 'Collection Beta',
     avatars: [
       'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix&mouth=smile',
       'https://api.dicebear.com/7.x/avataaars/svg?seed=Oliver&mouth=smile',
@@ -30,8 +30,8 @@ const GENDER_CATEGORIES = [
     ]
   },
   {
-    id: 'cyber',
-    label: 'Cyber',
+    id: 'matrix_gamma',
+    label: 'Collection Gamma',
     avatars: [
       'https://api.dicebear.com/7.x/bottts/svg?seed=Zenith',
       'https://api.dicebear.com/7.x/bottts/svg?seed=Matrix',
@@ -56,10 +56,6 @@ const Profile: React.FC<ProfileProps> = ({ user, onUpdate, onSignOut }) => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 2 * 1024 * 1024) {
-        alert("File size exceeds 2MB limit.");
-        return;
-      }
       const reader = new FileReader();
       reader.onloadend = () => {
         setAvatarPreview(reader.result as string);
@@ -91,12 +87,14 @@ const Profile: React.FC<ProfileProps> = ({ user, onUpdate, onSignOut }) => {
   return (
     <div className="max-w-5xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
       <div className="bg-white rounded-[3.5rem] border border-slate-200 shadow-2xl overflow-hidden">
-        <div className="h-56 bg-[#0a0b14] relative flex items-end justify-between px-16 pb-8 overflow-hidden">
+        {/* Profile Banner */}
+        <div className="h-64 bg-[#0a0b14] relative flex items-center px-16 overflow-hidden">
           <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_50%_50%,_#4f46e5_0%,_transparent_60%)]"></div>
           
-          <div className="relative z-10 flex items-center gap-8 translate-y-24">
-            <div className="relative group">
-              <div className="w-40 h-40 rounded-[3rem] bg-white border-[6px] border-white shadow-2xl overflow-hidden ring-8 ring-slate-900/40 flex items-center justify-center">
+          <div className="relative z-10 flex items-center gap-10">
+            {/* Profile Pic Alignment */}
+            <div className="relative group shrink-0">
+              <div className="w-32 h-32 rounded-[2.5rem] bg-white border-[4px] border-white shadow-2xl overflow-hidden ring-4 ring-indigo-500/20 flex items-center justify-center">
                 <img 
                   src={avatarPreview} 
                   alt={user.name} 
@@ -106,41 +104,47 @@ const Profile: React.FC<ProfileProps> = ({ user, onUpdate, onSignOut }) => {
               <button 
                 type="button"
                 onClick={triggerFileInput}
-                className="absolute inset-0 bg-indigo-600/60 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col items-center justify-center rounded-[2.8rem] text-white"
+                className="absolute inset-0 bg-indigo-600/60 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col items-center justify-center rounded-[2.2rem] text-white"
               >
-                <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                 </svg>
               </button>
               <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
             </div>
-            <div className="pt-20">
-              <h2 className="text-4xl font-black text-slate-900 tracking-tighter uppercase italic">{user.name}</h2>
-              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.3em] mt-1">Enterprise Kernel • Level 1 Admin</p>
+
+            {/* Owner Name Alignment - Size 13, Stylish Font */}
+            <div className="space-y-1">
+              <p className="text-indigo-400 text-[9px] font-black uppercase tracking-[0.4em] mb-1 italic opacity-80">Principal Authority</p>
+              <h2 className="text-[13px] text-white uppercase tracking-[0.4em] drop-shadow-lg whitespace-nowrap" 
+                  style={{ fontFamily: "'Georgia', 'Times New Roman', serif", fontStyle: 'italic', fontWeight: 700 }}>
+                {user.name}
+              </h2>
+              <p className="text-[9px] text-slate-500 font-bold uppercase tracking-[0.2em]">Enterprise Root Node • Active</p>
             </div>
           </div>
 
-          <div className="z-10 flex gap-4 pb-4">
+          <div className="ml-auto z-10">
              <button 
                 type="button" 
                 onClick={onSignOut} 
-                className="bg-white/5 hover:bg-rose-600/20 text-white border border-white/10 px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all backdrop-blur-md"
+                className="bg-white/5 hover:bg-rose-600/20 text-white border border-white/10 px-6 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all backdrop-blur-md"
              >
                 Terminate Session
              </button>
           </div>
         </div>
 
-        <div className="px-16 pt-32 pb-16">
+        <div className="px-16 py-16">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
             <div className="lg:col-span-5 space-y-10">
               <div className="space-y-2">
                 <h4 className="text-xs font-black text-slate-900 uppercase tracking-[0.3em]">Identity Matrix</h4>
-                <p className="text-xs text-slate-500 italic">Select from gender-specific AI-generated personas.</p>
+                <p className="text-xs text-slate-500 italic">Select from AI-generated persona collections to set your node identity.</p>
               </div>
 
               <div className="space-y-6">
-                {GENDER_CATEGORIES.map(category => (
+                {IDENTITY_MATRICES.map(category => (
                   <div key={category.id} className="group relative">
                     <div className="flex items-center justify-between p-6 bg-slate-50 border border-slate-100 rounded-[2rem] hover:bg-white hover:border-indigo-200 transition-all cursor-default shadow-sm">
                       <div className="flex items-center gap-4">
@@ -154,13 +158,14 @@ const Profile: React.FC<ProfileProps> = ({ user, onUpdate, onSignOut }) => {
                       <svg className="w-4 h-4 text-slate-300 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" /></svg>
                     </div>
 
-                    <div className="absolute left-full top-0 ml-4 hidden group-hover:flex gap-3 p-3 bg-white border border-slate-200 rounded-[2.2rem] shadow-2xl z-20 animate-in fade-in slide-in-from-left-2">
+                    {/* Pop-out avatar selector on hover */}
+                    <div className="absolute left-full top-0 ml-4 hidden group-hover:flex gap-3 p-4 bg-white border border-slate-200 rounded-[2.5rem] shadow-2xl z-20 animate-in fade-in slide-in-from-left-2">
                       {category.avatars.map((url, i) => (
                         <button 
                           key={i}
                           type="button"
                           onClick={() => setAvatarPreview(url)}
-                          className="w-16 h-16 rounded-2xl overflow-hidden bg-slate-100 border-2 border-transparent hover:border-indigo-500 transition-all shadow-md shrink-0"
+                          className="w-16 h-16 rounded-2xl overflow-hidden bg-slate-100 border-2 border-transparent hover:border-indigo-500 transition-all shadow-md shrink-0 active:scale-90"
                         >
                           <img src={url} className="w-full h-full object-cover" />
                         </button>
@@ -177,14 +182,20 @@ const Profile: React.FC<ProfileProps> = ({ user, onUpdate, onSignOut }) => {
                  
                  <div className="grid grid-cols-1 gap-8">
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Full Name</label>
-                      <input className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 text-sm font-black outline-none focus:border-indigo-500 transition-all" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Operator Designation (Name)</label>
+                      <input 
+                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 text-sm font-black outline-none focus:border-indigo-500 transition-all placeholder:text-slate-300" 
+                        placeholder="Enter primary identity name..."
+                        value={formData.name} 
+                        onChange={e => setFormData({ ...formData, name: e.target.value })} 
+                      />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Designation</label>
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Entity Role</label>
                       <select className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 text-sm font-black outline-none focus:border-indigo-500 transition-all" value={formData.role} onChange={e => setFormData({ ...formData, role: e.target.value })}>
                         <option>Owner</option>
                         <option>Principal Admin</option>
+                        <option>General Manager</option>
                       </select>
                     </div>
                  </div>
@@ -194,7 +205,14 @@ const Profile: React.FC<ProfileProps> = ({ user, onUpdate, onSignOut }) => {
                   onClick={handleSave}
                   className="w-full bg-slate-900 text-white py-5 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl active:scale-95 transition-all flex items-center justify-center gap-4"
                 >
-                  {isSaving ? 'Syncing...' : 'Synchronize Identity'}
+                  {isSaving ? (
+                    <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                      Synchronize Identity Matrix
+                    </>
+                  )}
                 </button>
               </div>
             </div>
