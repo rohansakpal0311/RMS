@@ -517,7 +517,7 @@ const POS: React.FC<POSProps> = ({
                 </button>
               ))}
             </div>
-            <div className="flex gap-2 shrink-0 border-l border-slate-100 pl-4">
+            <div className="flex gap-2 shrink-0 pl-4">
               <button onClick={() => setShowAddCategory(true)} className="bg-slate-50 text-slate-600 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border border-slate-200 hover:bg-slate-100 transition-all">+ Category</button>
               <button onClick={() => { setItemToEdit(null); setShowItemModal(true); }} className="bg-indigo-600 text-white px-8 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all">+ Menu Asset</button>
             </div>
@@ -537,7 +537,7 @@ const POS: React.FC<POSProps> = ({
           </button>
         </div>
 
-        <div className={`grid gap-4 overflow-y-auto pr-2 custom-scrollbar pb-20 grid-cols-2 lg:grid-cols-4 2xl:grid-cols-5`}>
+        <div className={`grid gap-4 overflow-y-auto pr-2 no-scrollbar pb-20 grid-cols-2 lg:grid-cols-4 2xl:grid-cols-5`}>
           {filteredMenu.map(item => (
             <div key={item.id} onClick={() => addToCart(item)} className="bg-white p-4 rounded-[2rem] border border-slate-200 hover:border-indigo-400 hover:shadow-xl transition-all cursor-pointer group flex flex-col relative h-fit text-left">
               <button onClick={(e) => { e.stopPropagation(); setItemToEdit(item); setShowItemModal(true); }} className="absolute top-4 right-4 z-10 w-8 h-8 bg-white/90 backdrop-blur shadow-sm rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-indigo-600 hover:text-white">
@@ -570,7 +570,7 @@ const POS: React.FC<POSProps> = ({
             zIndex: 100,
             cursor: isDragging ? 'grabbing' : 'default'
           }}
-          className="bg-white rounded-[3.5rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] flex flex-col overflow-hidden animate-in zoom-in-95 duration-300 border border-slate-100 max-h-[85vh]"
+          className="bg-white rounded-[3.5rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] flex flex-col overflow-hidden animate-in zoom-in-95 duration-300 max-h-[85vh]"
         >
           {/* Draggable Header Handle */}
           <div 
