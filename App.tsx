@@ -17,30 +17,35 @@ import RealTimeAssistant from './components/RealTimeAssistant';
 import Branches from './components/Branches';
 
 const INITIAL_BRANCHES: Branch[] = [
-  { id: 'b1', name: 'Downtown Zen', location: '7th Ave', revenue: 45200, active: true },
-  { id: 'b2', name: 'Zen Zenith Uptown', location: 'Madison Square', revenue: 32100, active: false },
-  { id: 'b3', name: 'Zen Coastal', location: 'Pier 39', revenue: 12000, active: false }
+  { id: 'b1', name: 'Main Branch', location: 'Zenith Plaza', revenue: 0, active: true }
 ];
 
 const App: React.FC = () => {
+  const [currentUser, setCurrentUser] = useState<User | null>(() => {
+    const saved = localStorage.getItem('zenith_pro_user');
+    if (!saved) return null;
+    try {
+      const user = JSON.parse(saved);
+      return { ...user, shiftStart: new Date(user.shiftStart) };
+    } catch (e) {
+      return null;
+    }
+  });
+
   const [activeRoute, setActiveRoute] = useState<AppRoute>(AppRoute.DASHBOARD);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [menu, setMenu] = useState<MenuItem[]>(INITIAL_MENU);
   const [tables, setTables] = useState<Table[]>(INITIAL_TABLES);
   const [inventory, setInventory] = useState<InventoryItem[]>(INITIAL_INVENTORY);
   const [branches, setBranches] = useState<Branch[]>(INITIAL_BRANCHES);
   const [tableCarts, setTableCarts] = useState<Record<string, CartItem[]>>({});
-  const [reservations, setReservations] = useState<Reservation[]>([
-    { id: 'res1', customerName: 'Rahul Sharma', partySize: 4, tableId: 't4', time: '19:30', status: 'PENDING' }
-  ]);
+  const [reservations, setReservations] = useState<Reservation[]>([]);
   const [selectedTableIdForPOS, setSelectedTableIdForPOS] = useState<string | null>(null);
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [notifications, setNotifications] = useState<{id: string, message: string, type: 'info' | 'success'}[]>([]);
   const [currentTime, setCurrentTime] = useState<string>('');
   
   const [restSettings, setRestSettings] = useState({
-    name: 'Zenith Main Branch',
+    name: 'Zenith Pro RMS',
     logo: 'https://cdn-icons-png.flaticon.com/512/3170/3170733.png'
   });
 
@@ -49,7 +54,7 @@ const App: React.FC = () => {
     if (saved) {
       const parsed = JSON.parse(saved);
       setRestSettings({ 
-        name: parsed.restaurantName || 'Zenith Main Branch', 
+        name: parsed.restaurantName || 'Zenith Pro RMS', 
         logo: parsed.restaurantLogo || 'https://cdn-icons-png.flaticon.com/512/3170/3170733.png' 
       });
     }
@@ -79,28 +84,19 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const savedOrders = localStorage.getItem('zenith_pro_orders');
-    if (savedOrders) setOrders(JSON.parse(savedOrders).map((o: any) => ({...o, createdAt: new Date(o.createdAt)})));
+    if (savedOrders) {
+      try {
+        setOrders(JSON.parse(savedOrders).map((o: any) => ({...o, createdAt: new Date(o.createdAt)})));
+      } catch(e) { console.error("Order Load Failed", e); }
+    }
     
     const savedBranches = localStorage.getItem('zenith_pro_branches');
     if (savedBranches) setBranches(JSON.parse(savedBranches));
-
-    const savedUser = localStorage.getItem('zenith_pro_user');
-    if (savedUser) {
-      const user = JSON.parse(savedUser);
-      setCurrentUser({
-        ...user,
-        shiftStart: new Date(user.shiftStart)
-      });
-    }
   }, []);
 
   useEffect(() => {
     localStorage.setItem('zenith_pro_orders', JSON.stringify(orders));
   }, [orders]);
-
-  useEffect(() => {
-    localStorage.setItem('zenith_pro_branches', JSON.stringify(branches));
-  }, [branches]);
 
   const addNotification = useCallback((message: string, type: 'info' | 'success' = 'info') => {
     const id = Math.random().toString(36).substr(2, 9);
@@ -110,76 +106,21 @@ const App: React.FC = () => {
     }, 8000);
   }, []);
 
-  const handleAddBranch = (name: string, location: string) => {
-    const newBranch: Branch = {
-      id: 'b' + Date.now(),
-      name,
-      location,
-      revenue: 0,
-      active: false
-    };
-    setBranches([...branches, newBranch]);
-    addNotification(`Branch "${name}" added successfully`, 'success');
-  };
-
-  const handleDeleteBranch = (id: string) => {
-    const branchToDelete = branches.find(b => b.id === id);
-    if (branchToDelete?.active) {
-      addNotification(`Cannot delete the active branch`, 'info');
-      return;
-    }
-    setBranches(branches.filter(b => b.id !== id));
-    addNotification(`Branch "${branchToDelete?.name}" removed`, 'info');
-  };
-
-  const handleSwitchBranch = (branchId: string) => {
-    setBranches(prev => prev.map(b => ({ ...b, active: b.id === branchId })));
-    addNotification(`Switched to ${branches.find(b => b.id === branchId)?.name} branch`, 'info');
-  };
-
-  const addOrder = (newOrder: Order) => {
-    setOrders(prev => [newOrder, ...prev]);
-    addNotification(`Order received for POS #${newOrder.id.slice(0,4)}`, 'success');
-  };
-
-  const updateOrderStatus = (id: string, status: Order['status']) => {
-    setOrders(prev => prev.map(o => o.id === id ? { ...o, status } : o));
-  };
-
-  const updateTableStatus = (id: string, status: Table['status']) => {
-    setTables(prev => prev.map(t => t.id === id ? { ...t, status } : t));
-  };
-
   const handleLogin = (user: User) => {
     setCurrentUser(user);
     localStorage.setItem('zenith_pro_user', JSON.stringify(user));
+    addNotification(`Welcome back, ${user.name}`, 'success');
   };
 
   const handleSignOut = () => {
-    setIsLoggingOut(true);
-    setTimeout(() => {
-      localStorage.removeItem('zenith_pro_user');
-      setCurrentUser(null);
-      setActiveRoute(AppRoute.DASHBOARD);
-      setIsLoggingOut(false);
-    }, 1200);
-  };
-
-  const handleUpdateItem = (updatedItem: MenuItem) => {
-    setMenu(prev => prev.map(item => item.id === updatedItem.id ? updatedItem : item));
-    addNotification(`Menu Asset "${updatedItem.name}" updated`, 'success');
+    localStorage.removeItem('zenith_pro_user');
+    setCurrentUser(null);
+    setActiveRoute(AppRoute.DASHBOARD);
   };
 
   if (!currentUser) {
     return <Auth onAuthenticated={handleLogin} />;
   }
-
-  const restaurantData = {
-    activeOrders: orders.filter(o => !['COMPLETED', 'CANCELLED'].includes(o.status)).length,
-    revenue: orders.reduce((sum, o) => sum + o.total, 0),
-    occupiedTables: tables.filter(t => t.status === 'OCCUPIED').length,
-    availableTables: tables.filter(t => t.status === 'AVAILABLE').length,
-  };
 
   const renderContent = () => {
     switch (activeRoute) {
@@ -188,12 +129,9 @@ const App: React.FC = () => {
       case AppRoute.POS:
         return (
           <POS 
-            menu={menu} 
-            tables={tables} 
-            onAddOrder={addOrder} 
-            updateTableStatus={updateTableStatus} 
+            menu={menu} tables={tables} onAddOrder={(o) => { setOrders([o, ...orders]); addNotification(`Order #${o.id} received`, 'success'); }} 
+            updateTableStatus={(id, status) => setTables(prev => prev.map(t => t.id === id ? { ...t, status } : t))} 
             onAddItem={(item) => setMenu([item, ...menu])}
-            onUpdateItem={handleUpdateItem}
             initialTableId={selectedTableIdForPOS}
             tableCarts={tableCarts}
             onUpdateTableCart={(id, items) => setTableCarts({...tableCarts, [id]: items})}
@@ -203,12 +141,12 @@ const App: React.FC = () => {
           />
         );
       case AppRoute.KDS:
-        return <KDS orders={orders} updateOrderStatus={updateOrderStatus} />;
+        return <KDS orders={orders} updateOrderStatus={(id, status) => setOrders(orders.map(o => o.id === id ? {...o, status} : o))} />;
       case AppRoute.TABLES:
         return (
           <TableManager 
             tables={tables} 
-            updateTableStatus={updateTableStatus} 
+            updateTableStatus={(id, status) => setTables(prev => prev.map(t => t.id === id ? { ...t, status } : t))} 
             reservations={reservations} 
             onAddReservation={(res) => setReservations([...reservations, res])} 
             onUpdateReservation={(res) => setReservations(reservations.map(r => r.id === res.id ? res : r))}
@@ -227,9 +165,9 @@ const App: React.FC = () => {
         return (
           <Branches 
             branches={branches} 
-            onSwitch={handleSwitchBranch} 
-            onAdd={handleAddBranch} 
-            onDelete={handleDeleteBranch} 
+            onSwitch={(id) => setBranches(branches.map(b => ({...b, active: b.id === id})))} 
+            onAdd={(name, location) => setBranches([...branches, {id: 'b'+Date.now(), name, location, revenue:0, active:false}])} 
+            onDelete={(id) => setBranches(branches.filter(b => b.id !== id))} 
           />
         );
       case AppRoute.SETTINGS:
@@ -239,26 +177,19 @@ const App: React.FC = () => {
       case AppRoute.PROFILE:
         return <Profile user={currentUser} onUpdate={setCurrentUser} onSignOut={handleSignOut} />;
       default:
-        return <div className="p-8">Module Development Pending</div>;
+        return <div className="p-8">Module Initializing...</div>;
     }
   };
 
   return (
     <div className="flex h-screen overflow-hidden bg-[#f8f9fc]">
-      <Sidebar 
-        activeRoute={activeRoute} 
-        onNavigate={setActiveRoute} 
-        user={currentUser} 
-        onSignOut={handleSignOut}
-      />
-      <main className="flex-1 overflow-y-auto overflow-x-hidden relative">
+      <Sidebar activeRoute={activeRoute} onNavigate={setActiveRoute} user={currentUser} onSignOut={handleSignOut} />
+      <main className="flex-1 overflow-y-auto no-scrollbar relative">
         <header className="sticky top-0 z-30 flex items-center justify-between px-10 py-6 bg-white/80 backdrop-blur-xl border-b border-slate-100">
           <div className="flex items-center gap-6">
-            <h1 className="text-2xl font-black text-slate-900 tracking-tighter uppercase italic">
-              {activeRoute.replace('_', ' ')}
-            </h1>
+            <h1 className="text-2xl font-black text-slate-900 tracking-tighter uppercase italic">{activeRoute.replace('_', ' ')}</h1>
             <div className="h-4 w-[1px] bg-slate-200"></div>
-            <div className="flex items-center gap-2 bg-slate-900 px-4 py-1.5 rounded-xl shadow-lg border border-slate-800">
+            <div className="bg-slate-900 px-4 py-1.5 rounded-xl shadow-lg border border-slate-800">
               <span className="text-[10px] font-black text-white uppercase tracking-widest tabular-nums">{currentTime}</span>
             </div>
           </div>
@@ -269,9 +200,7 @@ const App: React.FC = () => {
              </div>
              <div className="flex flex-col">
                 <span className="text-[9px] font-black text-indigo-500 uppercase tracking-widest leading-none mb-1">Active Root</span>
-                <span className="text-xs font-black text-slate-800 uppercase tracking-widest whitespace-nowrap italic">
-                  {restSettings.name}
-                </span>
+                <span className="text-xs font-black text-slate-800 uppercase tracking-widest whitespace-nowrap italic">{restSettings.name}</span>
              </div>
           </div>
         </header>
@@ -281,7 +210,7 @@ const App: React.FC = () => {
         </div>
       </main>
       
-      <RealTimeAssistant restaurantData={restaurantData} />
+      <RealTimeAssistant restaurantData={{ orders: orders.length, revenue: orders.reduce((s,o)=>s+o.total,0) }} />
     </div>
   );
 };

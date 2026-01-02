@@ -36,7 +36,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeRoute, onNavigate, user, onSign
 
   return (
     <aside className="w-80 bg-[#0f111a] h-screen flex flex-col shrink-0 overflow-hidden shadow-2xl relative">
-      <div className="absolute top-0 right-0 w-[1px] h-full bg-white/5"></div>
+      {/* Removed vertical divider line here */}
       
       <div className="p-10 flex items-center gap-4">
         <div className="relative">
@@ -51,7 +51,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeRoute, onNavigate, user, onSign
         </div>
       </div>
       
-      <nav className="flex-1 px-6 py-2 space-y-1 overflow-y-auto custom-scrollbar">
+      <nav className="flex-1 px-6 py-2 space-y-1 overflow-y-auto no-scrollbar">
         {items.map((item) => (
           <button
             key={item.id}
