@@ -58,7 +58,6 @@ const PaymentModal: React.FC<{
     if (m === 'CASH') {
       onFinalize('CASH');
     } else {
-      // Switches to processing view where timer starts immediately
       setStep('PROCESSING');
     }
   };
@@ -134,13 +133,13 @@ const PaymentModal: React.FC<{
                 <div className="flex justify-center items-center gap-10">
                    <div className="flex flex-col items-center gap-2 group transition-all">
                       <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/Google_Pay_Logo.svg/512px-Google_Pay_Logo.svg.png" className="h-10 object-contain drop-shadow-md" alt="GPay" />
-                      <span className="text-[9px] font-black text-indigo-600 uppercase tracking-widest">GPay Available</span>
+                      <span className="text-[9px] font-black text-indigo-600 uppercase tracking-widest">GPay Active</span>
                    </div>
-                   <div className="flex flex-col items-center gap-2 opacity-50 grayscale hover:grayscale-0 transition-all">
+                   <div className="flex flex-col items-center gap-2 opacity-50 grayscale">
                       <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/71/PhonePe_Logo.svg/1200px-PhonePe_Logo.svg.png" className="h-7 object-contain" alt="PhonePe" />
                       <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">PhonePe</span>
                    </div>
-                   <div className="flex flex-col items-center gap-2 opacity-50 grayscale hover:grayscale-0 transition-all">
+                   <div className="flex flex-col items-center gap-2 opacity-50 grayscale">
                       <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/24/Paytm_Logo_%28standalone%29.svg/1200px-Paytm_Logo_%28standalone%29.svg.png" className="h-7 object-contain" alt="Paytm" />
                       <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Paytm</span>
                    </div>
@@ -307,9 +306,9 @@ const ItemModal: React.FC<{
         </button>
         <h3 className="text-xl font-black text-slate-900 uppercase italic tracking-tighter mb-8 text-center">{initialItem ? 'Update Item' : 'Add Item'}</h3>
         <div className="space-y-6">
-          <input type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-sm font-bold outline-none" placeholder="Item Name" />
-          <input type="number" value={formData.price} onChange={e => setFormData({...formData, price: parseInt(e.target.value)})} className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-sm font-bold outline-none" placeholder="Price" />
-          <select value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-sm font-bold outline-none">
+          <input type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 text-sm font-bold outline-none" placeholder="Item Name" />
+          <input type="number" value={formData.price} onChange={e => setFormData({...formData, price: parseInt(e.target.value)})} className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 text-sm font-bold outline-none" placeholder="Price" />
+          <select value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 text-sm font-bold outline-none">
             {availableCategories.filter(c => c !== 'All').map(c => <option key={c} value={c}>{c}</option>)}
           </select>
           <button onClick={() => onSave({ ...formData, id: initialItem?.id || Date.now().toString(), description: formData.desc, image: initialItem?.image || 'https://picsum.photos/seed/food/400/300', available: true, preparationTime: 15 })} className="w-full bg-indigo-600 text-white py-5 rounded-2xl font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all">Save Asset</button>
@@ -364,7 +363,6 @@ const POS: React.FC<POSProps> = ({
     }
   }, [selectedTable, tableCarts, activeOrdersForTable.length]);
 
-  // Set terminal to a visible center-right position initially
   useEffect(() => {
     if (isTerminalOpen && terminalPos.x === 0 && terminalPos.y === 0) {
       setTerminalPos({ x: window.innerWidth - 500, y: 120 });
@@ -384,7 +382,6 @@ const POS: React.FC<POSProps> = ({
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (isDragging) {
-        // Enforce boundary constraints
         const newX = Math.max(0, Math.min(window.innerWidth - 450, e.clientX - dragStartOffset.current.x));
         const newY = Math.max(0, Math.min(window.innerHeight - 500, e.clientY - dragStartOffset.current.y));
         setTerminalPos({ x: newX, y: newY });
@@ -500,10 +497,9 @@ const POS: React.FC<POSProps> = ({
   };
 
   return (
-    <div className="flex h-[calc(100vh-160px)] gap-6 animate-in slide-in-from-bottom-4 duration-500 overflow-hidden relative">
+    <div className="flex h-[calc(100vh-160px)] gap-6 animate-in slide-in-from-bottom-4 duration-500 overflow-hidden relative print:hidden">
       
-      {/* Left Column: Interactive Menu Area (Always visible) */}
-      <div className={`flex flex-col transition-all duration-500 h-full flex-1`}>
+      <div className={`flex flex-col h-full flex-1`}>
         <div className="flex items-center gap-6 mb-6">
           <div className="flex-1 flex items-center gap-4 bg-white p-4 rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
             <div ref={scrollRef} className="flex gap-2 overflow-x-auto no-scrollbar scroll-smooth flex-1 px-2">
@@ -558,7 +554,6 @@ const POS: React.FC<POSProps> = ({
         </div>
       </div>
 
-      {/* Floating Draggable Active Terminal */}
       {isTerminalOpen && (
         <div 
           ref={terminalRef}
@@ -570,34 +565,30 @@ const POS: React.FC<POSProps> = ({
             zIndex: 100,
             cursor: isDragging ? 'grabbing' : 'default'
           }}
-          className="bg-white rounded-[3.5rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] flex flex-col overflow-hidden animate-in zoom-in-95 duration-300 max-h-[85vh]"
+          className="bg-white rounded-[3.5rem] shadow-[0_40px_100px_-20px_rgba(0,0,0,0.3)] flex flex-col overflow-hidden animate-in zoom-in-95 duration-300 max-h-[85vh] border-0"
         >
-          {/* Draggable Header Handle */}
           <div 
             onMouseDown={handleMouseDown}
-            className="p-8 border-b border-slate-50 flex items-center justify-between shrink-0 bg-slate-50/50 cursor-grab active:cursor-grabbing"
+            className="p-8 flex items-center justify-between shrink-0 bg-slate-50/50 cursor-grab active:cursor-grabbing border-b border-slate-100"
           >
             <div className="flex items-center gap-3">
-               <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center text-white shadow-lg shadow-slate-900/20">
+               <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center text-white shadow-lg">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
                </div>
                <div>
                  <h3 className="font-black text-slate-900 uppercase italic tracking-tight leading-none">Active Terminal</h3>
-                 <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mt-1">Hold & Drag to Move</p>
+                 <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mt-1">Draggable Interface</p>
                </div>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
-              <button 
-                onClick={() => setIsTerminalOpen(false)}
-                className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-slate-400 hover:text-rose-500 transition-colors shadow-sm hover:shadow-md"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12" /></svg>
-              </button>
-            </div>
+            <button 
+              onClick={() => setIsTerminalOpen(false)}
+              className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-slate-400 hover:text-rose-500 transition-colors shadow-sm"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col p-8 space-y-6 bg-white">
+          <div className="flex-1 overflow-y-auto no-scrollbar flex flex-col p-8 space-y-6 bg-white">
             <div className="flex bg-slate-50 p-1.5 rounded-2xl border border-slate-100">
                {(['DINE_IN', 'TAKEAWAY', 'DELIVERY'] as OrderType[]).map(type => (
                  <button 
