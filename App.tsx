@@ -129,9 +129,10 @@ const App: React.FC = () => {
       case AppRoute.POS:
         return (
           <POS 
-            menu={menu} tables={tables} onAddOrder={(o) => { setOrders([o, ...orders]); addNotification(`Order #${o.id} received`, 'success'); }} 
+            menu={menu} tables={tables} onAddOrder={(o) => { setOrders([o, ...orders]); addNotification(`Order #${o.id} dispatched`, 'success'); }} 
             updateTableStatus={(id, status) => setTables(prev => prev.map(t => t.id === id ? { ...t, status } : t))} 
             onAddItem={(item) => setMenu([item, ...menu])}
+            onUpdateItem={(updated) => setMenu(menu.map(m => m.id === updated.id ? updated : m))}
             initialTableId={selectedTableIdForPOS}
             tableCarts={tableCarts}
             onUpdateTableCart={(id, items) => setTableCarts({...tableCarts, [id]: items})}
@@ -155,6 +156,7 @@ const App: React.FC = () => {
             menu={menu}
             tableCarts={tableCarts}
             onUpdateTableCart={(id, items) => setTableCarts({...tableCarts, [id]: items})}
+            onAddOrder={(o) => { setOrders([o, ...orders]); addNotification(`Quick Order #${o.id} dispatched`, 'success'); }}
           />
         );
       case AppRoute.INVENTORY:
@@ -193,7 +195,6 @@ const App: React.FC = () => {
               <span className="text-[10px] font-black text-white uppercase tracking-widest tabular-nums">{currentTime}</span>
             </div>
           </div>
-          
           <div className="flex items-center gap-4 bg-slate-50 pl-2 pr-6 py-2 rounded-2xl border border-slate-100 shadow-sm transition-all hover:shadow-md">
              <div className="w-10 h-10 rounded-xl bg-white p-1.5 shadow-sm border border-slate-50 flex items-center justify-center">
                 <img src={restSettings.logo} alt="Brand" className="w-full h-full object-contain" />
@@ -204,12 +205,8 @@ const App: React.FC = () => {
              </div>
           </div>
         </header>
-        
-        <div className="p-10 max-w-[1600px] mx-auto">
-          {renderContent()}
-        </div>
+        <div className="p-10 max-w-[1600px] mx-auto">{renderContent()}</div>
       </main>
-      
       <RealTimeAssistant restaurantData={{ orders: orders.length, revenue: orders.reduce((s,o)=>s+o.total,0) }} />
     </div>
   );
